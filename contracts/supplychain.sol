@@ -6,7 +6,7 @@ contract SupplyChain{
     uint upc;
     uint sku;
     address contractOwner;
-    mapping(string=>address[]) merhmap;
+    mapping(string=>address[]) item_map;
     mapping(uint => Item) items; // maps UPC to an item 
     mapping (uint => string[]) itemsHistory; // maps UPC to an array of Tx hash
     constructor () public{
@@ -63,7 +63,7 @@ struct Item {
         upc: upc,
         // Metamask-Ethereum address of the current owner:
         ownerID: contractOwner,
-        // Metamask-Ethereum address of Farmer:
+        
         SupplierID: _SupplierID,
         SupplierName:_SupplierName,
         // Farmer Name:
@@ -72,7 +72,7 @@ struct Item {
         productPrice: uint(0),
         // Product State as represented in the enum above:
         itemState: defaultState,
-        // Metamask-Ethereum address of  Distributor:
+    
         manufacturerID: address(0),
         retailerID: address(0),
         manuId:'0'
@@ -87,19 +87,17 @@ struct Item {
 
 
        function purchaseItemByManufacturer(uint _upc, uint  quantity, string memory _manufacturerId) public  
-         //producedBySupplier(_upc) // check items state has been produced
-        //verifyCaller(items[_upc].ownerID) // check msg.sender is owner// check msg.sender belongs to distributorRole
-        //forSaleBySupplier(_upc) // check items state is for ForSaleByFarmer
+  
         {
-        // transfer funds from distributor to farmer
+        
         items[_upc].ownerID = msg.sender; // update owner
-        items[_upc].manufacturerID = msg.sender; // update distributor
+        items[_upc].manufacturerID = msg.sender; 
        
         items[_upc].itemState = State.PurchasedByManufacturer; // update state
         items[_upc].manuId=_manufacturerId;
         //items[_upc].itemState = State.ReceivedByManufacturer; // update state
-       //mechsupquantity[_merchandizerId][items[_upc].originsupplierID]=quantity;
-       merhmap[_manufacturerId].push(items[_upc].SupplierID);
+       
+       item_map[_manufacturerId].push(items[_upc].SupplierID);
         // itemsHistory[_upc].FTD = block.number; // add block number
       //emit ForSaleBySupplier(_upc);
         emit lognewPurchase   (_upc,block.timestamp, quantity,_manufacturerId,items[_upc].SupplierID);
