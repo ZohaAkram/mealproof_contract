@@ -9,6 +9,7 @@ contract SupplyChain{
     mapping(address=>address[]) item_map;
     mapping(uint => Item) items; // maps UPC to an item 
     mapping (uint => string[]) itemsHistory; // maps UPC to an array of Tx hash
+   
     constructor () public{
         contractOwner=msg.sender;
         sku = 1;
@@ -55,10 +56,11 @@ contract SupplyChain{
        _;
    } 
          //Events
-         event ProducedBySupplier(uint upc);    
+         event ProducedBySupplier(uint upc);   
+         event ForSaleBy_Supplier(uint _upc, uint _price); 
          event PurchasedByManufacturer(uint upc);
          event lognewPurchase(uint _upc,uint time ,uint _quantity,uint flavor,address manufacturerID,address SupplierID); //insert FTD
-        
+         
         
         function itemBySupplier(uint _upc, string memory _SupplierName,uint _flavor)public {
 
@@ -88,7 +90,13 @@ contract SupplyChain{
             emit ProducedBySupplier(_upc);
               }
 
+        function ForSaleBySupplier(uint _upc,uint _price) public {
+            items[_upc].SupplierID=msg.sender;
+            items[_upc].itemState =State.ForSaleBySupplier;
+            items[_upc].productPrice=_price;
 
+            emit ForSaleBy_Supplier(_upc, _price);
+        }
 
        function purchaseItemByManufacturer(uint _upc, uint  quantity, uint _flavor) onlyOwner public  
   
