@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.4.20;
 
-contract admin_manufact
+contract admin_manufacture
 {
     address public owner;
     uint public creationTime;
     bytes32 a;
+    // uint role;
+    // mapping(address=>uint) role_Id;
     mapping(address => User) private usersdetail;
-    address[] private userindex; // array of address of all users
-    uint count =userindex.length;
+    address[] private userarray; // array of address of all users
+    uint count =userarray.length;
 
     constructor()  {
         owner=msg.sender;
@@ -16,13 +18,13 @@ contract admin_manufact
 
     }
     function isUser(address _userAddress)public view  returns(bool isIndeed) {
-            if(userindex.length == 0) return false;
-            return (userindex[usersdetail[_userAddress].index] == _userAddress);
+            if(userarray.length == 0) return false;
+            return (userarray[usersdetail[_userAddress].index] == _userAddress);
       }
          
-    struct user_roles{
-       uint user_role;
-    }
+    // struct user_roles{
+    //    uint user_role;
+    // }
 mapping(address=>uint) user_role;
 
         struct User{
@@ -37,32 +39,31 @@ mapping(address=>uint) user_role;
             
 
         } event LogUpdateUser(address indexed _userAddress, uint index,  string email, string location, string password);
-           event LogNewUser   (address indexed _userAddress, uint index,string  name, string password,  string email, uint userrole, bytes32 _hash);
-        function setUser(address _userAddress, string memory userName, string memory password, string memory email,string memory location, uint role) public returns(bytes32 _a,uint index) {
-require(isUser(_userAddress)==false);
- usersdetail[_userAddress].createdBy = msg.sender;
-            usersdetail[_userAddress].creationTime= block.timestamp;
-            usersdetail[_userAddress].userName=userName;
-            usersdetail[_userAddress].password=password;
-            usersdetail[_userAddress].email=email;
-            usersdetail[_userAddress].location=location;
-            usersdetail[_userAddress].role=role;
-            user_role[_userAddress]= role;
-            userindex.push(_userAddress);
-            usersdetail[_userAddress].index=userindex.length-1;
-           a=sha256(abi.encodePacked(_userAddress,userName,location,password,email,role));
+          event LogNewUser   (address indexed _userAddress, uint index,string  name, string password,  string email, uint userrole, bytes32 _hash);
         
-             emit  LogNewUser(
-            _userAddress,
-            usersdetail[_userAddress].index,
-            userName,
-            password,
-            email,
-            user_role[_userAddress],
-            a
-            );
-           
-             return (a,userindex.length-1);
+        
+        function setUser(address _userAddress, string memory userName, string memory password, string memory email,string memory location, uint _role) public returns(bytes32 _a,uint index) {
+                require(isUser(_userAddress)==false);
+                 usersdetail[_userAddress].createdBy = msg.sender;
+                 usersdetail[_userAddress].creationTime= block.timestamp;
+                 usersdetail[_userAddress].location=location;
+                 usersdetail[_userAddress].role=_role;
+                 user_role[_userAddress]= _role;
+                 userarray.push(_userAddress);
+                 usersdetail[_userAddress].index=userarray.length-1;
+                 a=sha256(abi.encodePacked(_userAddress,userName,location,password,email,_role));
+        
+                 emit  LogNewUser(
+                  _userAddress,
+                  usersdetail[_userAddress].index,
+                  userName,
+                  password,
+                  email,
+                  user_role[_userAddress],
+                  a
+                  );
+                
+             return (a,userarray.length-1);
         
 
         }
