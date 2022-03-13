@@ -8,10 +8,6 @@ contract SupplyChain {
   address contractOwner;
   bytes32 upc;
 
-  constructor() {
-    contractOwner = msg.sender;
-  }
-
   enum State {
     producedBySupplier,
     forSaleBySupplier,
