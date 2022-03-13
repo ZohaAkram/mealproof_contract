@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solc": "^0.8.12",
     "web3": "^1.0.0-beta.26"
   }
