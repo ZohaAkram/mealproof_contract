@@ -4,7 +4,7 @@ pragma solidity >=0.4.20;
 contract SupplyChain {
 
 
-  mapping(address=>Item)
+  mapping(address=>Item) items;
   mapping(bytes32 => Item) itemIdentity;
 
 
