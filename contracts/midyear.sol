@@ -1,88 +1,128 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.4.20;
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 
-contract SupplyChain {
-  mapping(address => address[]) item_map;
-  mapping(bytes32 => Item) itemIdentity;
-  bytes32[] array_proof;
+// import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
+
+contract token is ERC721 {
   address contractOwner;
-  bytes32 upc;
+  bytes32[] array_proof;
   bytes32 hash;
+  bytes32[] rawItems;
 
+  constructor() public ERC721('supplychain', 'SCP') {
+    contractOwner = msg.sender;
+  }
+
+  bytes32 tokenID;
   enum State {
     producedBySupplier,
     forSaleBySupplier,
     purchasedByManufacturer,
     shippedBySupplier,
     receivedByManufacturer,
-    processedByManufacturer,
     packagedByManufacturer,
     forSaleByManufacturer,
     purchasedByRetailer,
     shippedByManufacturer,
     receivedByRetailer
   }
-  State constant defaultState = State.producedBySupplier;
-
   struct Item {
-    bytes32 upc;
-    uint256 productType;
-    address SupplierID;
-    string SupplierName;
-    uint256 productPrice;
-    State itemState;
-    address manufacturerID;
-    address retailerID;
+    uint256 product_code;
     address ownerID;
+    State itemState;
+    uint256 price;
+  }
+  struct Nugget {
+    uint256 product_code;
+    address ownerID;
+    State NuggetState;
+    bytes32[] items;
   }
 
-  //modifier
-  modifier onlyOwner() {
-    require(msg.sender == contractOwner, 'only ownercan do this');
-    _;
-  }
-  modifier verifyCaller(address _userAddress) {
-    require(msg.sender == _userAddress);
-    _;
-  }
-  modifier arrayproof(address sender, uint256 createdAt) {
-    hash = sha256(abi.encodePacked(sender, msg.sender, createdAt));
+  //hashtable----------------------------------
+  mapping(bytes32 => Item) itemInfo;
+
+  // mapping(uint => Item) itemforSale;
+  mapping(bytes32 => Nugget) nuggetInfo;
+  mapping(uint256 => uint256) nuggetMap;
+
+  //events--------------------------------
+  event lognewItem(bytes32 tokenID, uint256 createdAt); //create new item by supplier
+  event lognewNugget(bytes32 tokenID, uint256 createdAt);
+  event _purchasedByManufacturer(bytes32 tokenID, uint256 createdAt);
+  event newnugget(bytes32[] tokenId);
+  //modiifer --------------------
+  modifier arrayproof(address receiver, uint256 createdAt) {
+    hash = sha256(abi.encodePacked(msg.sender, receiver, createdAt));
     array_proof.push(hash);
     _;
   }
-  //events
-  event producedBySupplier(bytes32 upc, uint256 createdAt);
-  event forSaleBySupplier(bytes32 upc, uint256 price);
-  event lognewPurchase(
-    bytes32 upc,
-    uint256 time,
-    uint256 qty,
-    address supplierID
-  );
-  event purchasedByManufacturer(bytes32 upc);
-  event shippedBySupplier(bytes32 _upc);
 
   function itemBySupplier(
-    // not confirm about flavor and qty to form upc hash
-
     uint256 weight,
     uint256 flavor,
-    uint256 _productType,
     uint256 qty,
-    string memory _SupplierName
+    uint256 productType
+  ) public arrayproof(msg.sender, block.timestamp) returns (uint256) {
+    // uint i;
+
+    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
+    Item memory newItem = Item(
+      uint256(tokenID),
+      msg.sender,
+      State.producedBySupplier,
+      uint256(0)
+    );
+    _mint(msg.sender, uint256(tokenID));
+    emit lognewItem(tokenID, block.timestamp);
+    return (uint256(itemInfo[tokenID].itemState));
+  }
+
+  function itemForSale(bytes32 _tokenId, uint256 _price) public {
+    require(
+      ownerOf(uint256(_tokenId)) == msg.sender,
+      "You can't sale the item you don't owned"
+    );
+
+    itemInfo[(_tokenId)].price = _price; //assigning price to that item
+  }
+
+  function purchasedByManufacturer(
+    address from,
+    address to,
+    bytes32 _tokenId
   ) public arrayproof(msg.sender, block.timestamp) {
-    itemIdentity[upc] = Item({
-      upc: sha256(abi.encodePacked(weight, flavor, _productType, qty)),
-      ownerID: contractOwner,
-      SupplierID: msg.sender,
-      SupplierName: _SupplierName,
-      productPrice: uint256(0),
-      itemState: defaultState,
-      manufacturerID: address(0),
-      retailerID: address(0),
-      productType: _productType
-    });
-    emit producedBySupplier(upc, block.timestamp);
+    (itemInfo[_tokenId].price > 0, 'The item should be up for sale');
+    safeTransferFrom(from, to, uint256(_tokenId));
+    emit _purchasedByManufacturer(_tokenId, block.timestamp);
+  }
+
+  function shippedBySupplier(bytes32 _tokenId) public {
+    //to be seen again based on states
+    itemInfo[(_tokenId)].itemState = State.shippedBySupplier;
+  }
+
+  function packagedByManufacturer(
+    uint256 weight,
+    uint256 flavor,
+    uint256 qty,
+    uint256 productType,
+    bytes32 _rawTokenID
+  ) public returns (uint256) {
+    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
+    //  rawItems =items.push(itemInfo[_rawTokenID]);
+    Nugget memory newNugget = Nugget(
+      uint256(tokenID),
+      msg.sender,
+      State.packagedByManufacturer,
+      rawItems
+    );
+    nuggetInfo[tokenID].items.push(_rawTokenID);
+    _mint(msg.sender, uint256(tokenID));
+    emit lognewNugget(tokenID, block.timestamp);
+    emit newnugget(nuggetInfo[tokenID].items);
+    return (uint256(nuggetInfo[tokenID].NuggetState));
   }
 
   function validate(
@@ -95,45 +135,7 @@ contract SupplyChain {
     if (array_proof[txn] == hash_new) {
       return (true);
     }
-  }
 
-  function forSalebySupplier(bytes32 _upc, uint256 _price) public {
-    itemIdentity[_upc].SupplierID = msg.sender;
-    itemIdentity[_upc].itemState = State.forSaleBySupplier;
-    itemIdentity[_upc].productPrice = _price;
-
-    emit forSaleBySupplier(_upc, _price);
-  }
-
-  function orderByManufacturer(string memory desc)
-    public
-    view
-    returns (address orderBy, string memory description)
-  {
-    return (msg.sender, desc);
-  }
-
-  function purchaseItemByManufacturer(bytes32 _upc, uint256 qty) public {
-    itemIdentity[_upc].ownerID = msg.sender;
-    itemIdentity[_upc].manufacturerID = msg.sender;
-    itemIdentity[_upc].itemState = State.purchasedByManufacturer;
-    item_map[msg.sender].push(itemIdentity[_upc].SupplierID);
-
-    emit lognewPurchase(
-      _upc,
-      block.timestamp,
-      qty,
-      itemIdentity[_upc].SupplierID
-    );
-
-    emit purchasedByManufacturer(_upc);
-  }
-
-  function shippedItemBySupplier(bytes32 _upc)
-    public
-    verifyCaller(itemIdentity[_upc].SupplierID) // check msg.sender is supplierID
-  {
-    itemIdentity[_upc].itemState = State.shippedBySupplier; // update state
-    emit shippedBySupplier(_upc);
+    // forsale by supplier will be used for sale by manufacturer
   }
 }
