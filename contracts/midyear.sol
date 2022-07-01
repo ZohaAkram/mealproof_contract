@@ -53,8 +53,12 @@ contract token is ERC721 {
   event _purchasedByManufacturer(bytes32 tokenID, uint256 createdAt);
   event newnugget(bytes32[] tokenId);
   //modiifer --------------------
-  modifier arrayproof(address receiver, uint256 createdAt) {
-    hash = sha256(abi.encodePacked(msg.sender, receiver, createdAt));
+  modifier arrayproof(
+    address sender,
+    address receiver,
+    uint256 createdAt
+  ) {
+    hash = sha256(abi.encodePacked(sender, receiver, createdAt));
     array_proof.push(hash);
     _;
   }
@@ -64,12 +68,16 @@ contract token is ERC721 {
     uint256 flavor,
     uint256 qty,
     uint256 productType
-  ) public arrayproof(msg.sender, block.timestamp) returns (uint256) {
+  )
+    public
+    arrayproof(address(0), msg.sender, block.timestamp)
+    returns (uint256)
+  {
     // uint i;
 
-    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
+    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType)); // in hash
     Item memory newItem = Item(
-      uint256(tokenID),
+      uint256(tokenID), //typecast hash into uint256
       msg.sender,
       State.producedBySupplier,
       uint256(0)
@@ -92,9 +100,10 @@ contract token is ERC721 {
     address from,
     address to,
     bytes32 _tokenId
-  ) public arrayproof(msg.sender, block.timestamp) {
+  ) public arrayproof(msg.sender, to, block.timestamp) {
     (itemInfo[_tokenId].price > 0, 'The item should be up for sale');
     safeTransferFrom(from, to, uint256(_tokenId));
+    itemInfo[_tokenId].itemState = State.purchasedByManufacturer;
     emit _purchasedByManufacturer(_tokenId, block.timestamp);
   }
 
@@ -122,7 +131,9 @@ contract token is ERC721 {
     _mint(msg.sender, uint256(tokenID));
     emit lognewNugget(tokenID, block.timestamp);
     emit newnugget(nuggetInfo[tokenID].items);
-    return (uint256(nuggetInfo[tokenID].NuggetState));
+    return (
+      uint256(nuggetInfo[tokenID].NuggetState = State.packagedByManufacturer)
+    );
   }
 
   function validate(
