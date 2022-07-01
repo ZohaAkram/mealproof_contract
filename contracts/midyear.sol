@@ -41,16 +41,20 @@ contract token is ERC721 {
   }
 
   //hashtable----------------------------------
-  mapping(bytes32 => Item) itemInfo;
+  mapping(uint256 => Item) itemInfo;
 
   // mapping(uint => Item) itemforSale;
-  mapping(bytes32 => Nugget) nuggetInfo;
+  mapping(uint256 => Nugget) nuggetInfo;
   mapping(uint256 => uint256) nuggetMap;
 
   //events--------------------------------
-  event lognewItem(bytes32 tokenID, uint256 createdAt); //create new item by supplier
-  event lognewNugget(bytes32 tokenID, uint256 createdAt);
-  event _purchasedByManufacturer(bytes32 tokenID, uint256 createdAt);
+  event lognewItem(uint256 tokenID, string _mystring, uint256 createdAt); //create new item by supplier
+  event lognewNugget(uint256 tokenID, string _mystring, uint256 createdAt);
+  event _purchasedByManufacturer(
+    uint256 tokenID,
+    string _mystring,
+    uint256 createdAt
+  );
   event newnugget(bytes32[] tokenId);
   //modiifer --------------------
   modifier arrayproof(
@@ -76,40 +80,49 @@ contract token is ERC721 {
     // uint i;
 
     tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType)); // in hash
+    uint256 int_tokenID = uint256(tokenID); // convert hash to integer
     Item memory newItem = Item(
-      uint256(tokenID), //typecast hash into uint256
+      int_tokenID, //typecast hash into uint256
       msg.sender,
       State.producedBySupplier,
       uint256(0)
     );
-    _mint(msg.sender, uint256(tokenID));
-    emit lognewItem(tokenID, block.timestamp);
-    return (uint256(itemInfo[tokenID].itemState));
+    _mint(msg.sender, int_tokenID);
+    emit lognewItem(int_tokenID, 'Item created by supplier', block.timestamp);
+    return (uint256(itemInfo[int_tokenID].itemState));
   }
 
-  function itemForSale(bytes32 _tokenId, uint256 _price) public {
+  // sha256 is not bytes32 need to convert
+  function itemForSale(uint256 _tokenId, uint256 _price) public {
     require(
       ownerOf(uint256(_tokenId)) == msg.sender,
       "You can't sale the item you don't owned"
     );
 
-    itemInfo[(_tokenId)].price = _price; //assigning price to that item
+    itemInfo[uint256(_tokenId)].price = _price; //assigning price to that item
   }
 
   function purchasedByManufacturer(
     address from,
     address to,
-    bytes32 _tokenId
+    uint256 int_tokenID
   ) public arrayproof(msg.sender, to, block.timestamp) {
-    (itemInfo[_tokenId].price > 0, 'The item should be up for sale');
-    safeTransferFrom(from, to, uint256(_tokenId));
-    itemInfo[_tokenId].itemState = State.purchasedByManufacturer;
-    emit _purchasedByManufacturer(_tokenId, block.timestamp);
+    (
+      (uint256(itemInfo[int_tokenID].price)) > 0,
+      'The item should be up for sale'
+    );
+    safeTransferFrom(from, to, int_tokenID);
+    itemInfo[int_tokenID].itemState = State.purchasedByManufacturer;
+    emit _purchasedByManufacturer(
+      int_tokenID,
+      'Item purchased by Manufacturer',
+      block.timestamp
+    );
   }
 
-  function shippedBySupplier(bytes32 _tokenId) public {
+  function shippedBySupplier(uint256 int_tokenID) public {
     //to be seen again based on states
-    itemInfo[(_tokenId)].itemState = State.shippedBySupplier;
+    itemInfo[(int_tokenID)].itemState = State.shippedBySupplier;
   }
 
   function packagedByManufacturer(
@@ -117,7 +130,7 @@ contract token is ERC721 {
     uint256 flavor,
     uint256 qty,
     uint256 productType,
-    bytes32 _rawTokenID
+    uint256 int_tokenID
   ) public returns (uint256) {
     tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
     //  rawItems =items.push(itemInfo[_rawTokenID]);
@@ -127,12 +140,20 @@ contract token is ERC721 {
       State.packagedByManufacturer,
       rawItems
     );
-    nuggetInfo[tokenID].items.push(_rawTokenID);
+
+    nuggetInfo[int_tokenID].items.push(bytes32(int_tokenID));
     _mint(msg.sender, uint256(tokenID));
-    emit lognewNugget(tokenID, block.timestamp);
-    emit newnugget(nuggetInfo[tokenID].items);
+    emit lognewNugget(
+      int_tokenID,
+      'Item packaged by Manufacturer',
+      block.timestamp
+    );
+    emit newnugget(nuggetInfo[int_tokenID].items);
+
     return (
-      uint256(nuggetInfo[tokenID].NuggetState = State.packagedByManufacturer)
+      uint256(
+        nuggetInfo[int_tokenID].NuggetState = State.packagedByManufacturer
+      )
     );
   }
 
