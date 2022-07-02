@@ -49,8 +49,12 @@ contract token is ERC721 {
 
   //events--------------------------------
   event lognewItem(uint256 tokenID, string _mystring, uint256 createdAt); //create new item by supplier
-  event lognewNugget(uint256 tokenID,string _mystring, uint256 createdAt);
-  event _purchasedByManufacturer(uint256 tokenID, string _mystring, uint256 createdAt);
+  event lognewNugget(uint256 tokenID, string _mystring, uint256 createdAt);
+  event _purchasedByManufacturer(
+    uint256 tokenID,
+    string _mystring,
+    uint256 createdAt
+  );
   event newnugget(uint256[] tokenId);
   //modiifer --------------------
   modifier arrayproof(
@@ -84,7 +88,7 @@ contract token is ERC721 {
       uint256(0)
     );
     _mint(msg.sender, int_tokenID);
-    emit lognewItem(int_tokenID,"Item created by supplier", block.timestamp);
+    emit lognewItem(int_tokenID, 'Item created by supplier', block.timestamp);
     return (uint256(itemInfo[int_tokenID].itemState));
   }
 
@@ -103,10 +107,17 @@ contract token is ERC721 {
     address to,
     uint256 int_tokenID
   ) public arrayproof(msg.sender, to, block.timestamp) {
-    ((uint256(itemInfo[int_tokenID].price)) > 0, 'The item should be up for sale');
+    (
+      (uint256(itemInfo[int_tokenID].price)) > 0,
+      'The item should be up for sale'
+    );
     safeTransferFrom(from, to, int_tokenID);
     itemInfo[int_tokenID].itemState = State.purchasedByManufacturer;
-    emit _purchasedByManufacturer(int_tokenID, "Item purchased by Manufacturer", block.timestamp);
+    emit _purchasedByManufacturer(
+      int_tokenID,
+      'Item purchased by Manufacturer',
+      block.timestamp
+    );
   }
 
   function shippedBySupplier(uint256 int_tokenID) public {
@@ -121,8 +132,10 @@ contract token is ERC721 {
     uint256 productType,
     uint256 int_tokenID
   ) public returns (uint256) {
-    require(ownerOf(int_tokenID)==msg.sender)
-    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
+    require(ownerOf(int_tokenID) == msg.sender);
+    bytes32 tokenID = sha256(
+      abi.encodePacked(weight, flavor, qty, productType)
+    );
     uint256 uint_tokenID = uint256(tokenID);
     //  rawItems =items.push(itemInfo[_rawTokenID]);
     Nugget memory newNugget = Nugget(
@@ -131,14 +144,20 @@ contract token is ERC721 {
       State.packagedByManufacturer,
       rawItems
     );
-    
+
     nuggetInfo[uint_tokenID].items.push(int_tokenID);
     _mint(msg.sender, uint_tokenID);
-    emit lognewNugget(uint_tokenID,"Item packaged by Manufacturer", block.timestamp);
+    emit lognewNugget(
+      uint_tokenID,
+      'Item packaged by Manufacturer',
+      block.timestamp
+    );
     emit newnugget(nuggetInfo[uint_tokenID].items);
-    
+
     return (
-      uint256(nuggetInfo[uint_tokenID].NuggetState = State.packagedByManufacturer)
+      uint256(
+        nuggetInfo[uint_tokenID].NuggetState = State.packagedByManufacturer
+      )
     );
   }
 
