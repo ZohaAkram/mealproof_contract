@@ -133,9 +133,7 @@ contract token is ERC721 {
     uint256 int_tokenID
   ) public returns (uint256) {
     require(ownerOf(int_tokenID) == msg.sender);
-    bytes32 tokenID = sha256(
-      abi.encodePacked(weight, flavor, qty, productType)
-    );
+    tokenID = sha256(abi.encodePacked(weight, flavor, qty, productType));
     uint256 uint_tokenID = uint256(tokenID);
     //  rawItems =items.push(itemInfo[_rawTokenID]);
     Nugget memory newNugget = Nugget(
