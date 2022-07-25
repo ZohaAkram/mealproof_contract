@@ -55,6 +55,12 @@ contract token is ERC721 {
     string _mystring,
     uint256 createdAt
   );
+  event _purchasedByRetailer(
+    uint256 tokenID,
+    string _mystring,
+    uint256 createdAt,
+    uint256[] recipe
+  );
   event newnugget(uint256[] tokenId);
   //modiifer --------------------
   modifier arrayproof(
@@ -95,7 +101,7 @@ contract token is ERC721 {
   // sha256 is not bytes32 need to convert
   function itemForSale(uint256 _tokenId, uint256 _price) public {
     require(
-      ownerOf(uint256(_tokenId)) == msg.sender,
+      ownerOf(_tokenId) == msg.sender,
       "You can't sale the item you don't owned"
     );
 
@@ -107,10 +113,6 @@ contract token is ERC721 {
     address to,
     uint256 int_tokenID
   ) public arrayproof(msg.sender, to, block.timestamp) {
-    (
-      (uint256(itemInfo[int_tokenID].price)) > 0,
-      'The item should be up for sale'
-    );
     safeTransferFrom(from, to, int_tokenID);
     itemInfo[int_tokenID].itemState = State.purchasedByManufacturer;
     emit _purchasedByManufacturer(
@@ -142,8 +144,7 @@ contract token is ERC721 {
       State.packagedByManufacturer,
       rawItems
     );
-
-    nuggetInfo[uint_tokenID].items.push(int_tokenID);
+    nuggetInfo[uint_tokenID].items.push(int_tokenID); // use hash of raw items in nugget
     _mint(msg.sender, uint_tokenID);
     emit lognewNugget(
       uint_tokenID,
@@ -156,6 +157,25 @@ contract token is ERC721 {
       uint256(
         nuggetInfo[uint_tokenID].NuggetState = State.packagedByManufacturer
       )
+    );
+  }
+
+  function purchasedByRetailer(
+    address from,
+    address to,
+    uint256 int_tokenID
+  ) public arrayproof(msg.sender, to, block.timestamp) {
+    // (
+    //   (uint256(itemInfo[int_tokenID].price)) > 0,
+    //   'The item should be up for sale'
+    // );
+    safeTransferFrom(from, to, int_tokenID);
+    itemInfo[int_tokenID].itemState = State.purchasedByRetailer;
+    emit _purchasedByRetailer(
+      int_tokenID,
+      'Item purchased by Retailer',
+      block.timestamp,
+      nuggetInfo[int_tokenID].items
     );
   }
 
